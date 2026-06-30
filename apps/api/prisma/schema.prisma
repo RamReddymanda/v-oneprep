@@ -1,0 +1,217 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+enum TaskType {
+  VIDEO
+  ARTICLE
+  ASSESSMENT
+}
+
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+enum PaymentStatus {
+  MOCK_SUCCESS
+  MOCK_FAILED
+}
+
+enum QuestionType {
+  MCQ
+  FILL_BLANK
+}
+
+model User {
+  id           String              @id @default(cuid())
+  firstName    String
+  lastName     String
+  email        String              @unique
+  passwordHash String
+  role         Role                @default(STUDENT)
+  active       Boolean             @default(true)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+  accounts     Account[]
+  purchases    Purchase[]
+  payments     Payment[]
+  progress     Progress[]
+  attempts     AssessmentAttempt[]
+}
+
+model Account {
+  id                String   @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Plan {
+  id          String        @id @default(cuid())
+  name        String
+  priceInr    Int
+  features    String[]
+  status      PublishStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  courses     Course[]
+  purchases   Purchase[]
+  payments    Payment[]
+}
+
+model Course {
+  id                       String        @id @default(cuid())
+  title                    String
+  slug                     String        @unique
+  description              String
+  bannerUrl                String
+  estimatedDurationMinutes Int
+  status                   PublishStatus @default(DRAFT)
+  createdAt                DateTime      @default(now())
+  updatedAt                DateTime      @updatedAt
+  modules                  Module[]
+  plans                    Plan[]
+}
+
+model Module {
+  id          String   @id @default(cuid())
+  courseId    String
+  title       String
+  description String
+  position    Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  tasks       Task[]
+}
+
+model Task {
+  id              String      @id @default(cuid())
+  moduleId        String
+  title           String
+  slug            String      @unique
+  type            TaskType
+  description     String
+  position        Int
+  durationMinutes Int
+  status          PublishStatus @default(DRAFT)
+  vimeoUrl        String?
+  thumbnailUrl    String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  module          Module      @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  article         Article?
+  assessment      Assessment?
+  progress        Progress[]
+}
+
+model Article {
+  id                     String   @id @default(cuid())
+  taskId                 String   @unique
+  coverImageUrl          String
+  estimatedReadingMinutes Int
+  content                Json
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  task                   Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+}
+
+model Assessment {
+  id              String              @id @default(cuid())
+  taskId          String              @unique
+  instructions    String
+  timerMinutes    Int
+  passingScore    Int
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  task            Task                @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  questions       Question[]
+  attempts        AssessmentAttempt[]
+}
+
+model Question {
+  id           String       @id @default(cuid())
+  assessmentId String
+  type         QuestionType
+  prompt       String
+  options      Json
+  correctAnswer String
+  explanation  String
+  difficulty   String
+  position     Int
+  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers      Answer[]
+}
+
+model AssessmentAttempt {
+  id           String      @id @default(cuid())
+  userId       String
+  assessmentId String
+  startedAt    DateTime    @default(now())
+  submittedAt  DateTime?
+  score        Int         @default(0)
+  total        Int         @default(0)
+  percentage   Int         @default(0)
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assessment   Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  answers      Answer[]
+}
+
+model Answer {
+  id          String            @id @default(cuid())
+  attemptId   String
+  questionId  String
+  response    String
+  correct     Boolean
+  attempt     AssessmentAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    Question          @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model Purchase {
+  id          String   @id @default(cuid())
+  userId      String
+  planId      String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        Plan     @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId])
+}
+
+model Progress {
+  id          String   @id @default(cuid())
+  userId      String
+  taskId      String
+  completedAt DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  task        Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, taskId])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  userId      String
+  planId      String
+  amountInr   Int
+  status      PaymentStatus
+  providerRef String
+  createdAt   DateTime      @default(now())
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan        Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+}

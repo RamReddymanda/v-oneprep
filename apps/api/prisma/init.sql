@@ -1,0 +1,159 @@
+CREATE TYPE "Role" AS ENUM ('STUDENT', 'ADMIN');
+CREATE TYPE "TaskType" AS ENUM ('VIDEO', 'ARTICLE', 'ASSESSMENT');
+CREATE TYPE "PublishStatus" AS ENUM ('DRAFT', 'PUBLISHED');
+CREATE TYPE "PaymentStatus" AS ENUM ('MOCK_SUCCESS', 'MOCK_FAILED');
+CREATE TYPE "QuestionType" AS ENUM ('MCQ', 'FILL_BLANK');
+
+CREATE TABLE "User" (
+  "id" TEXT PRIMARY KEY,
+  "firstName" TEXT NOT NULL,
+  "lastName" TEXT NOT NULL,
+  "email" TEXT NOT NULL UNIQUE,
+  "passwordHash" TEXT NOT NULL,
+  "role" "Role" NOT NULL DEFAULT 'STUDENT',
+  "active" BOOLEAN NOT NULL DEFAULT TRUE,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Account" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "provider" TEXT NOT NULL,
+  "providerAccountId" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Plan" (
+  "id" TEXT PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "priceInr" INTEGER NOT NULL,
+  "features" TEXT[] NOT NULL,
+  "status" "PublishStatus" NOT NULL DEFAULT 'DRAFT',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Course" (
+  "id" TEXT PRIMARY KEY,
+  "title" TEXT NOT NULL,
+  "slug" TEXT NOT NULL UNIQUE,
+  "description" TEXT NOT NULL,
+  "bannerUrl" TEXT NOT NULL,
+  "estimatedDurationMinutes" INTEGER NOT NULL,
+  "status" "PublishStatus" NOT NULL DEFAULT 'DRAFT',
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Module" (
+  "id" TEXT PRIMARY KEY,
+  "courseId" TEXT NOT NULL REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "title" TEXT NOT NULL,
+  "description" TEXT NOT NULL,
+  "position" INTEGER NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Task" (
+  "id" TEXT PRIMARY KEY,
+  "moduleId" TEXT NOT NULL REFERENCES "Module"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "title" TEXT NOT NULL,
+  "slug" TEXT NOT NULL UNIQUE,
+  "type" "TaskType" NOT NULL,
+  "description" TEXT NOT NULL,
+  "position" INTEGER NOT NULL,
+  "durationMinutes" INTEGER NOT NULL,
+  "status" "PublishStatus" NOT NULL DEFAULT 'DRAFT',
+  "vimeoUrl" TEXT,
+  "thumbnailUrl" TEXT,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Article" (
+  "id" TEXT PRIMARY KEY,
+  "taskId" TEXT NOT NULL UNIQUE REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "coverImageUrl" TEXT NOT NULL,
+  "estimatedReadingMinutes" INTEGER NOT NULL,
+  "content" JSONB NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Assessment" (
+  "id" TEXT PRIMARY KEY,
+  "taskId" TEXT NOT NULL UNIQUE REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "instructions" TEXT NOT NULL,
+  "timerMinutes" INTEGER NOT NULL,
+  "passingScore" INTEGER NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL
+);
+
+CREATE TABLE "Question" (
+  "id" TEXT PRIMARY KEY,
+  "assessmentId" TEXT NOT NULL REFERENCES "Assessment"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "type" "QuestionType" NOT NULL,
+  "prompt" TEXT NOT NULL,
+  "options" JSONB NOT NULL,
+  "correctAnswer" TEXT NOT NULL,
+  "explanation" TEXT NOT NULL,
+  "difficulty" TEXT NOT NULL,
+  "position" INTEGER NOT NULL
+);
+
+CREATE TABLE "AssessmentAttempt" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "assessmentId" TEXT NOT NULL REFERENCES "Assessment"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "startedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "submittedAt" TIMESTAMP(3),
+  "score" INTEGER NOT NULL DEFAULT 0,
+  "total" INTEGER NOT NULL DEFAULT 0,
+  "percentage" INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE "Answer" (
+  "id" TEXT PRIMARY KEY,
+  "attemptId" TEXT NOT NULL REFERENCES "AssessmentAttempt"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "questionId" TEXT NOT NULL REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "response" TEXT NOT NULL,
+  "correct" BOOLEAN NOT NULL
+);
+
+CREATE TABLE "Purchase" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "planId" TEXT NOT NULL REFERENCES "Plan"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Progress" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "taskId" TEXT NOT NULL REFERENCES "Task"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "completedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "Payment" (
+  "id" TEXT PRIMARY KEY,
+  "userId" TEXT NOT NULL REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "planId" TEXT NOT NULL REFERENCES "Plan"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "amountInr" INTEGER NOT NULL,
+  "status" "PaymentStatus" NOT NULL,
+  "providerRef" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE "_CourseToPlan" (
+  "A" TEXT NOT NULL REFERENCES "Course"("id") ON DELETE CASCADE ON UPDATE CASCADE,
+  "B" TEXT NOT NULL REFERENCES "Plan"("id") ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE UNIQUE INDEX "Account_provider_providerAccountId_key" ON "Account"("provider", "providerAccountId");
+CREATE UNIQUE INDEX "Purchase_userId_planId_key" ON "Purchase"("userId", "planId");
+CREATE UNIQUE INDEX "Progress_userId_taskId_key" ON "Progress"("userId", "taskId");
+CREATE UNIQUE INDEX "_CourseToPlan_AB_unique" ON "_CourseToPlan"("A", "B");
+CREATE INDEX "_CourseToPlan_B_index" ON "_CourseToPlan"("B");
