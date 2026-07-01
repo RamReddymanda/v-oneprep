@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm install && npm run build -w @v-oneprep/shared && npm run build -w @v-oneprep/api"
+
+[deploy]
+startCommand = "npm run start:prod -w @v-oneprep/api"
+restartPolicyType = "on_failure"

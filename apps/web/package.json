@@ -1,5 +1,5 @@
 {
-  "name": "@aeropath/web",
+  "name": "@v-oneprep/web",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -10,7 +10,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@aeropath/shared": "file:../../packages/shared",
+    "@v-oneprep/shared": "file:../../packages/shared",
     "@hookform/resolvers": "^5.1.1",
     "@radix-ui/react-accordion": "^1.2.11",
     "@radix-ui/react-dialog": "^1.1.14",

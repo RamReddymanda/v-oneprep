@@ -20,7 +20,7 @@ export class AuthController {
   @Post("signup")
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.signup(dto);
-    response.cookie("aeropath_token", session.token, cookieOptions);
+    response.cookie("voneprep_token", session.token, cookieOptions);
     return { user: session.user };
   }
 
@@ -28,13 +28,13 @@ export class AuthController {
   @Post("login")
   async login(@Body() dto: LoginDto, @Res({ passthrough: true }) response: Response) {
     const session = await this.auth.login(dto);
-    response.cookie("aeropath_token", session.token, cookieOptions);
+    response.cookie("voneprep_token", session.token, cookieOptions);
     return { user: session.user };
   }
 
   @Post("logout")
   logout(@Res({ passthrough: true }) response: Response) {
-    response.clearCookie("aeropath_token", { path: "/" });
+    response.clearCookie("voneprep_token", { path: "/" });
     return { ok: true };
   }
 

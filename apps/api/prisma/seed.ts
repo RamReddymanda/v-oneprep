@@ -10,24 +10,24 @@ async function main() {
   ]);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@aeropath.local" },
+    where: { email: "admin@voneprep.local" },
     update: {},
     create: {
-      firstName: "AeroPath",
+      firstName: "V-OnePrep",
       lastName: "Admin",
-      email: "admin@aeropath.local",
+      email: "admin@voneprep.local",
       passwordHash: adminPassword,
       role: Role.ADMIN
     }
   });
 
   const student = await prisma.user.upsert({
-    where: { email: "student@aeropath.local" },
+    where: { email: "student@voneprep.local" },
     update: {},
     create: {
       firstName: "Demo",
       lastName: "Student",
-      email: "student@aeropath.local",
+      email: "student@voneprep.local",
       passwordHash: studentPassword,
       role: Role.STUDENT
     }
@@ -232,7 +232,7 @@ async function main() {
     }
   });
 
-  console.log(`Seeded AeroPath MVP: admin=${admin.email}, student=${student.email}`);
+  console.log(`Seeded V-OnePrep MVP: admin=${admin.email}, student=${student.email}`);
 }
 
 main()

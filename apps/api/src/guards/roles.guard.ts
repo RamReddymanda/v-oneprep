@@ -15,7 +15,7 @@ export class RolesGuard implements CanActivate {
   canActivate(context: ExecutionContext): boolean {
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC, [context.getHandler(), context.getClass()]);
     const request = context.switchToHttp().getRequest<{ cookies?: Record<string, string>; user?: RequestUser }>();
-    const token = request.cookies?.aeropath_token;
+    const token = request.cookies?.voneprep_token;
 
     if (token) {
       try {

@@ -1,5 +1,5 @@
 {
-  "name": "aeropath-academy",
+  "name": "v-oneprep",
   "version": "0.1.0",
   "private": true,
   "workspaces": [
@@ -7,15 +7,15 @@
     "packages/*"
   ],
   "scripts": {
-    "dev": "concurrently \"npm.cmd run dev -w @aeropath/api\" \"npm.cmd run dev -w @aeropath/web\"",
-    "build": "npm.cmd run build -w @aeropath/shared && npm.cmd run build -w @aeropath/api && npm.cmd run build -w @aeropath/web",
-    "lint": "npm.cmd run lint -w @aeropath/api && npm.cmd run lint -w @aeropath/web",
-    "typecheck": "npm.cmd run typecheck -w @aeropath/shared && npm.cmd run typecheck -w @aeropath/api && npm.cmd run typecheck -w @aeropath/web",
-    "test": "npm.cmd run test -w @aeropath/api",
-    "db:generate": "npm.cmd run prisma:generate -w @aeropath/api",
-    "db:migrate": "npm.cmd run prisma:migrate -w @aeropath/api",
-    "db:seed": "npm.cmd run prisma:seed -w @aeropath/api",
-    "db:studio": "npm.cmd run prisma:studio -w @aeropath/api"
+    "dev": "concurrently \"npm run dev -w @v-oneprep/api\" \"npm run dev -w @v-oneprep/web\"",
+    "build": "npm run build -w @v-oneprep/shared && npm run build -w @v-oneprep/api && npm run build -w @v-oneprep/web",
+    "lint": "npm run lint -w @v-oneprep/api && npm run lint -w @v-oneprep/web",
+    "typecheck": "npm run typecheck -w @v-oneprep/shared && npm run typecheck -w @v-oneprep/api && npm run typecheck -w @v-oneprep/web",
+    "test": "npm run test -w @v-oneprep/api",
+    "db:generate": "npm run prisma:generate -w @v-oneprep/api",
+    "db:migrate": "npm run prisma:migrate -w @v-oneprep/api",
+    "db:seed": "npm run prisma:seed -w @v-oneprep/api",
+    "db:studio": "npm run prisma:studio -w @v-oneprep/api"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

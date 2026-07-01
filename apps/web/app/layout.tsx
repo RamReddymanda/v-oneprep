@@ -3,7 +3,7 @@ import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 
 export const metadata: Metadata = {
-  title: "AeroPath Academy",
+  title: "V-OnePrep",
   description: "Premium DGCA ground school platform for Indian CPL and ATPL aspirants."
 };
 

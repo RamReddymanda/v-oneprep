@@ -37,7 +37,7 @@ export default function SignupPage() {
   return (
     <main className="mx-auto flex min-h-[calc(100vh-64px)] max-w-lg items-center px-4 py-12">
       <Card className="w-full p-6">
-        <h1 className="text-2xl font-bold">Create your AeroPath account</h1>
+        <h1 className="text-2xl font-bold">Create your V-OnePrep account</h1>
         <form className="mt-6 grid gap-4" onSubmit={submit}>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="grid gap-2 text-sm font-medium">First Name<input className="rounded-md border border-line px-3 py-2" name="firstName" required /></label>

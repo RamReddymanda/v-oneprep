@@ -43,7 +43,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <span className="flex h-9 w-9 items-center justify-center rounded-md bg-primary text-white">
               <BookOpen size={18} />
             </span>
-            AeroPath Academy
+            V-OnePrep
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
             {nav.map((item) => {

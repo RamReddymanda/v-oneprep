@@ -33,7 +33,7 @@ export default function LoginPage() {
     <main className="mx-auto flex min-h-[calc(100vh-64px)] max-w-md items-center px-4 py-12">
       <Card className="w-full p-6">
         <h1 className="text-2xl font-bold">Login</h1>
-        <p className="mt-2 text-sm text-muted">Use `student@aeropath.local` or `admin@aeropath.local` for the demo.</p>
+        <p className="mt-2 text-sm text-muted">Use `student@voneprep.local` or `admin@voneprep.local` for the demo.</p>
         <form className="mt-6 grid gap-4" onSubmit={submit}>
           <label className="grid gap-2 text-sm font-medium">Email<input className="rounded-md border border-line px-3 py-2" name="email" type="email" required /></label>
           <label className="grid gap-2 text-sm font-medium">Password<input className="rounded-md border border-line px-3 py-2" name="password" type="password" required /></label>

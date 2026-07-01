@@ -184,7 +184,7 @@ export default function LearnPage() {
           {task.type === "ARTICLE" && task.article && (
             <Card className="overflow-hidden">
               <Image className="h-64 w-full object-cover" src={task.article.coverImageUrl} alt="" width={1100} height={420} />
-              <article className="prose-aeropath mx-auto max-w-3xl p-6 sm:p-10">
+              <article className="prose-V-OnePrep mx-auto max-w-3xl p-6 sm:p-10">
                 <p className="text-sm font-semibold text-primary">{task.article.estimatedReadingMinutes} min read</p>
                 {task.article.content.content?.map((node, index) => renderNode(node, index))}
                 <Button className="mt-6" onClick={markComplete} disabled={task.completed}>{task.completed ? "Completed" : "Mark Complete"}</Button>

@@ -17,7 +17,7 @@
       "@/*": [
         "./*"
       ],
-      "@aeropath/shared": [
+      "@v-oneprep/shared": [
         "../../packages/shared/src/index.ts"
       ]
     },

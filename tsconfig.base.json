@@ -11,7 +11,7 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@aeropath/shared": ["packages/shared/src/index.ts"]
+      "@v-oneprep/shared": ["packages/shared/src/index.ts"]
     }
   }
 }
