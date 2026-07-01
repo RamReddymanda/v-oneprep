@@ -20,13 +20,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const isMarketing = pathname === "/" || pathname === "/login" || pathname === "/signup";
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    if (isMarketing) return;
     api<{ role: string }>("/auth/me")
-      .then((user) => setIsAdmin(user.role === "ADMIN"))
-      .catch(() => setIsAdmin(false));
-  }, [isMarketing]);
+      .then((user) => {
+        setIsAdmin(user.role === "ADMIN");
+        setIsAuthed(true);
+      })
+      .catch(() => {
+        setIsAdmin(false);
+        setIsAuthed(false);
+      });
+  }, [pathname]);
 
   const nav = isAdmin ? [...baseNav, adminNavItem] : baseNav;
 
@@ -64,7 +70,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
           </nav>
           <div className="flex items-center gap-2">
-            {isMarketing ? (
+            {isAuthed ? (
+              <button className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-muted hover:bg-surface" onClick={logout}>
+                <LogOut size={16} />
+                <span className="hidden sm:inline">Logout</span>
+              </button>
+            ) : (
               <>
                 <Link className="hidden rounded-md px-3 py-2 text-sm font-semibold text-ink hover:bg-surface sm:inline-flex" href="/login">
                   Login
@@ -73,11 +84,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   Get Started
                 </Link>
               </>
-            ) : (
-              <button className="inline-flex items-center gap-2 rounded-md px-3 py-2 text-sm font-semibold text-muted hover:bg-surface" onClick={logout}>
-                <LogOut size={16} />
-                <span className="hidden sm:inline">Logout</span>
-              </button>
             )}
           </div>
         </div>
