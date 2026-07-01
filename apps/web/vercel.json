@@ -1,5 +1,5 @@
 {
   "installCommand": "cd ../.. && npm install",
-  "buildCommand": "cd ../.. && npm run build -w @v-oneprep/shared && node_modules/.bin/next build apps/web",
+  "buildCommand": "cd ../.. && npm run build -w @v-oneprep/shared && cd apps/web && ../../node_modules/.bin/next build",
   "outputDirectory": ".next"
 }
