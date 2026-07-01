@@ -27,6 +27,7 @@ async function bootstrap() {
   );
 
   const port = Number(process.env.PORT ?? config.get<string>("API_PORT") ?? 4000);
+  console.log(`[Bootstrap] PORT env=${process.env.PORT} → listening on ${port}`);
   await app.listen(port, "0.0.0.0");
 }
 
