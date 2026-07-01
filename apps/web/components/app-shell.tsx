@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { BookOpen, GraduationCap, LayoutDashboard, LogOut, Shield, UserRound } from "lucide-react";
+import { BookOpen, GraduationCap, LayoutDashboard, LogOut, Menu, Shield, UserRound, X } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isMarketing = pathname === "/" || pathname === "/login" || pathname === "/signup";
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAuthed, setIsAuthed] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     api<{ role: string }>("/auth/me")
@@ -34,7 +35,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       });
   }, [pathname]);
 
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [pathname]);
+
   const nav = isAdmin ? [...baseNav, adminNavItem] : baseNav;
+  const showNav = !isMarketing || isAuthed;
 
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => undefined);
@@ -51,7 +57,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </span>
             V-OnePrep
           </Link>
-          <nav className="hidden items-center gap-1 md:flex">
+          <nav className="hidden items-center gap-1 lg:flex">
             {nav.map((item) => {
               const Icon = item.icon;
               return (
@@ -85,15 +91,37 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 </Link>
               </>
             )}
+            {showNav && (
+              <button
+                type="button"
+                aria-label="Toggle navigation menu"
+                aria-expanded={menuOpen}
+                className="inline-flex items-center justify-center rounded-md p-2 text-muted hover:bg-surface lg:hidden"
+                onClick={() => setMenuOpen((open) => !open)}
+              >
+                {menuOpen ? <X size={20} /> : <Menu size={20} />}
+              </button>
+            )}
           </div>
         </div>
-        {!isMarketing && (
-          <nav className="flex gap-1 overflow-x-auto border-t border-line px-3 py-2 md:hidden">
-            {nav.map((item) => (
-              <Link key={item.href} href={item.href} className="whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface">
-                {item.label}
-              </Link>
-            ))}
+        {showNav && menuOpen && (
+          <nav className="flex flex-col gap-1 border-t border-line px-3 py-2 lg:hidden">
+            {nav.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-muted hover:bg-surface hover:text-ink",
+                    pathname.startsWith(item.href) && "bg-surface text-ink"
+                  )}
+                >
+                  <Icon size={16} />
+                  {item.label}
+                </Link>
+              );
+            })}
           </nav>
         )}
       </header>
