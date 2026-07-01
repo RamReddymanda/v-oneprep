@@ -1,4 +1,4 @@
-import { PrismaClient, PublishStatus, QuestionType, Role, TaskType } from "@prisma/client";
+import { PrismaClient, PublishStatus, QuestionDifficulty, QuestionType, Role, TaskType } from "@prisma/client";
 import { hash } from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -198,7 +198,7 @@ async function main() {
         options: ["DGCA", "FAA", "EASA", "ICAO"],
         correctAnswer: "DGCA",
         explanation: "The Directorate General of Civil Aviation regulates civil aviation in India.",
-        difficulty: "Easy",
+        difficulty: QuestionDifficulty.EASY,
         position: 1
       },
       {
@@ -208,7 +208,7 @@ async function main() {
         options: [],
         correctAnswer: "Visual",
         explanation: "VFR means Visual Flight Rules.",
-        difficulty: "Easy",
+        difficulty: QuestionDifficulty.EASY,
         position: 2
       }
     ]

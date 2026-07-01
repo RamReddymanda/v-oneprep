@@ -1,22 +1,34 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { BookOpen, GraduationCap, LayoutDashboard, LogOut, Shield, UserRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
-const nav = [
+const baseNav = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/plans", label: "Plans", icon: GraduationCap },
-  { href: "/profile", label: "Profile", icon: UserRound },
-  { href: "/admin", label: "Admin", icon: Shield }
+  { href: "/profile", label: "Profile", icon: UserRound }
 ];
+
+const adminNavItem = { href: "/admin", label: "Admin", icon: Shield };
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const isMarketing = pathname === "/" || pathname === "/login" || pathname === "/signup";
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    if (isMarketing) return;
+    api<{ role: string }>("/auth/me")
+      .then((user) => setIsAdmin(user.role === "ADMIN"))
+      .catch(() => setIsAdmin(false));
+  }, [isMarketing]);
+
+  const nav = isAdmin ? [...baseNav, adminNavItem] : baseNav;
 
   async function logout() {
     await api("/auth/logout", { method: "POST" }).catch(() => undefined);

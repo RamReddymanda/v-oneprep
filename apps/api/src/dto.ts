@@ -1,5 +1,5 @@
 import { Allow, IsArray, IsEmail, IsEnum, IsInt, IsOptional, IsString, Min, MinLength } from "class-validator";
-import { PublishStatus, QuestionType, TaskType } from "@prisma/client";
+import { DiscountType, PublishStatus, QuestionDifficulty, QuestionType, TaskType } from "@prisma/client";
 
 export class SignupDto {
   @IsString()
@@ -24,9 +24,16 @@ export class LoginDto {
   password!: string;
 }
 
-export class CheckoutDto {
+export class SubmitPaymentDto {
   @IsString()
   planId!: string;
+
+  @IsString()
+  screenshotUrl!: string;
+
+  @IsOptional()
+  @IsString()
+  referenceNote?: string;
 }
 
 export class SubmitAssessmentDto {
@@ -122,6 +129,13 @@ export class PlanDto {
 
   @IsEnum(PublishStatus)
   status!: PublishStatus;
+
+  @IsEnum(DiscountType)
+  discountType!: DiscountType;
+
+  @IsInt()
+  @Min(0)
+  discountValue!: number;
 }
 
 export class QuestionDto {
@@ -143,8 +157,8 @@ export class QuestionDto {
   @IsString()
   explanation!: string;
 
-  @IsString()
-  difficulty!: string;
+  @IsEnum(QuestionDifficulty)
+  difficulty!: QuestionDifficulty;
 
   @IsInt()
   position!: number;

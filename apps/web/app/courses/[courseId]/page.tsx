@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { CheckCircle2, Circle, FileText, Lock, PlayCircle, Timer } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -42,7 +41,8 @@ export default function CoursePage() {
               <ProgressBar value={course.progressPercent} />
             </div>
           </div>
-          <Image className="h-56 w-full rounded-lg object-cover" src={course.bannerUrl} alt="" width={720} height={420} />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className="h-56 w-full rounded-lg object-cover" src={course.bannerUrl} alt="" />
         </div>
       </section>
       <section className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">

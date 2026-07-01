@@ -8,3 +8,5 @@ coverage
 *.log
 postgres-data
 apps/api/prisma/migrations/dev.db
+apps/api/uploads/*
+!apps/api/uploads/.gitkeep

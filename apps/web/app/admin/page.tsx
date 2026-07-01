@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Card, LinkButton } from "@/components/ui";
 import { api } from "@/lib/api";
 import { formatInr } from "@/lib/utils";
+import { useRequireAdmin } from "@/lib/use-require-admin";
 
 type Metrics = {
   totalUsers: number;
@@ -17,11 +18,12 @@ type Metrics = {
 };
 
 export default function AdminPage() {
+  const ready = useRequireAdmin();
   const [metrics, setMetrics] = useState<Metrics | null>(null);
   useEffect(() => {
-    api<Metrics>("/admin/metrics").then(setMetrics).catch(() => undefined);
-  }, []);
-  if (!metrics) return <main className="mx-auto max-w-7xl px-4 py-10 text-muted">Loading admin dashboard...</main>;
+    if (ready) api<Metrics>("/admin/metrics").then(setMetrics).catch(() => undefined);
+  }, [ready]);
+  if (!ready || !metrics) return <main className="mx-auto max-w-7xl px-4 py-10 text-muted">Loading admin dashboard...</main>;
   const cards = [
     ["Total Users", metrics.totalUsers, Users],
     ["Total Students", metrics.totalStudents, Users],
@@ -38,7 +40,8 @@ export default function AdminPage() {
         </div>
         <div className="flex gap-2">
           <LinkButton href="/admin/courses" variant="secondary">Courses</LinkButton>
-          <LinkButton href="/admin/plans">Plans</LinkButton>
+          <LinkButton href="/admin/plans" variant="secondary">Plans</LinkButton>
+          <LinkButton href="/admin/payments">Payments</LinkButton>
         </div>
       </div>
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
@@ -65,6 +68,7 @@ export default function AdminPage() {
         <Link className="font-semibold text-primary" href="/admin/users">User Management</Link>
         <Link className="font-semibold text-primary" href="/admin/courses">Course Management</Link>
         <Link className="font-semibold text-primary" href="/admin/plans">Plan Management</Link>
+        <Link className="font-semibold text-primary" href="/admin/payments">Payment Review</Link>
       </div>
     </main>
   );

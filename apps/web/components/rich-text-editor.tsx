@@ -1,15 +1,15 @@
 "use client";
 
-import { EditorContent, useEditor } from "@tiptap/react";
+import { EditorContent, useEditor, type Content } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { Bold, Heading2, List } from "lucide-react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/utils";
 
-export function RichTextEditor({ onChange }: { onChange: (json: unknown) => void }) {
+export function RichTextEditor({ content, onChange }: { content?: Content; onChange: (json: unknown) => void }) {
   const editor = useEditor({
     extensions: [StarterKit],
-    content: "<h2>Article heading</h2><p>Write clear, exam-focused reading material here.</p>",
+    content: content ?? "<h2>Article heading</h2><p>Write clear, exam-focused reading material here.</p>",
     immediatelyRender: false,
     onUpdate: ({ editor }) => onChange(editor.getJSON())
   });

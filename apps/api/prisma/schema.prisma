@@ -24,13 +24,26 @@ enum PublishStatus {
 }
 
 enum PaymentStatus {
-  MOCK_SUCCESS
-  MOCK_FAILED
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
 }
 
 enum QuestionType {
   MCQ
   FILL_BLANK
+}
+
+enum DiscountType {
+  NONE
+  PERCENTAGE
+  FIXED
+}
+
+enum QuestionDifficulty {
+  EASY
+  MEDIUM
+  HARD
 }
 
 model User {
@@ -62,16 +75,18 @@ model Account {
 }
 
 model Plan {
-  id          String        @id @default(cuid())
-  name        String
-  priceInr    Int
-  features    String[]
-  status      PublishStatus @default(DRAFT)
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  courses     Course[]
-  purchases   Purchase[]
-  payments    Payment[]
+  id            String        @id @default(cuid())
+  name          String
+  priceInr      Int
+  features      String[]
+  discountType  DiscountType  @default(NONE)
+  discountValue Int           @default(0)
+  status        PublishStatus @default(DRAFT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  courses       Course[]
+  purchases     Purchase[]
+  payments      Payment[]
 }
 
 model Course {
@@ -145,16 +160,16 @@ model Assessment {
 }
 
 model Question {
-  id           String       @id @default(cuid())
+  id           String             @id @default(cuid())
   assessmentId String
   type         QuestionType
   prompt       String
   options      Json
   correctAnswer String
   explanation  String
-  difficulty   String
+  difficulty   QuestionDifficulty
   position     Int
-  assessment   Assessment   @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  assessment   Assessment         @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
   answers      Answer[]
 }
 
@@ -205,13 +220,22 @@ model Progress {
 }
 
 model Payment {
-  id          String        @id @default(cuid())
-  userId      String
-  planId      String
-  amountInr   Int
-  status      PaymentStatus
-  providerRef String
-  createdAt   DateTime      @default(now())
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan        Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+  id            String        @id @default(cuid())
+  userId        String
+  planId        String
+  amountInr     Int
+  status        PaymentStatus @default(PENDING_REVIEW)
+  screenshotUrl String
+  referenceNote String?
+  reviewedAt    DateTime?
+  reviewNote    String?
+  createdAt     DateTime      @default(now())
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan          Plan          @relation(fields: [planId], references: [id], onDelete: Cascade)
+}
+
+model AppSettings {
+  id        String   @id @default("singleton")
+  qrCodeUrl String?
+  updatedAt DateTime @updatedAt
 }

@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { BookOpen, ClipboardCheck, LineChart, Trophy } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Card, EmptyState, ProgressBar } from "@/components/ui";
@@ -52,7 +51,8 @@ export default function DashboardPage() {
           {data.purchasedCourses.map((course) => (
             <Link key={course.id} href={`/courses/${course.id}`}>
               <Card className="overflow-hidden transition hover:shadow-soft">
-                <Image className="h-48 w-full object-cover" src={course.bannerUrl} alt="" width={900} height={360} />
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="h-48 w-full object-cover" src={course.bannerUrl} alt="" />
                 <div className="p-5">
                   <h3 className="text-lg font-semibold">{course.title}</h3>
                   <p className="mt-2 text-sm leading-6 text-muted">{course.description}</p>

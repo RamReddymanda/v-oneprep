@@ -19,8 +19,8 @@ export class LearningController {
 
   @Public()
   @Get("courses")
-  courses() {
-    return this.learning.listCourses();
+  courses(@CurrentUser() user: RequestUser | undefined) {
+    return this.learning.listCourses(user?.id);
   }
 
   @Get("courses/:courseId")

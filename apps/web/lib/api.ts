@@ -2,6 +2,17 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:4000/api";
 
 type RequestOptions = RequestInit & { json?: unknown };
 
+function parseErrorMessage(text: string): string {
+  try {
+    const parsed = JSON.parse(text) as { message?: string | string[] };
+    if (Array.isArray(parsed.message)) return parsed.message.join(", ");
+    if (typeof parsed.message === "string") return parsed.message;
+  } catch {
+    // not JSON, fall through to raw text
+  }
+  return text;
+}
+
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const headers = new Headers(options.headers);
   if (options.json !== undefined) headers.set("Content-Type", "application/json");
@@ -14,7 +25,7 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
   });
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(text || `Request failed: ${response.status}`);
+    throw new Error(parseErrorMessage(text) || `Request failed: ${response.status}`);
   }
   return response.json() as Promise<T>;
 }

@@ -1,47 +1,54 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { PaymentStatus, PublishStatus } from "@prisma/client";
+import { computeFinalPriceInr } from "../utils/pricing";
 import { PrismaService } from "./prisma.service";
 
 @Injectable()
 export class PaymentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async checkout(userId: string, planId: string) {
+  async checkoutInfo(planId: string) {
     const plan = await this.prisma.plan.findFirst({
       where: { id: planId, status: PublishStatus.PUBLISHED },
       include: { courses: true }
     });
     if (!plan) throw new NotFoundException("Plan not found");
+    const settings = await this.prisma.appSettings.findUnique({ where: { id: "singleton" } });
+    const finalPriceInr = computeFinalPriceInr(plan.priceInr, plan.discountType, plan.discountValue);
     return {
-      checkoutId: `mock_rzp_${Date.now()}`,
-      provider: "MOCK_RAZORPAY",
-      plan: {
-        id: plan.id,
-        name: plan.name,
-        priceInr: plan.priceInr,
-        courseIds: plan.courses.map((course) => course.id)
-      },
-      userId
+      plan: { ...plan, finalPriceInr },
+      qrCodeUrl: settings?.qrCodeUrl ?? null
     };
   }
 
-  async success(userId: string, planId: string) {
-    const plan = await this.prisma.plan.findUniqueOrThrow({ where: { id: planId } });
-    const payment = await this.prisma.payment.create({
+  async submit(userId: string, planId: string, screenshotUrl: string, referenceNote?: string) {
+    const plan = await this.prisma.plan.findFirst({ where: { id: planId, status: PublishStatus.PUBLISHED } });
+    if (!plan) throw new NotFoundException("Plan not found");
+
+    const existing = await this.prisma.payment.findFirst({
+      where: { userId, planId, status: PaymentStatus.PENDING_REVIEW }
+    });
+    if (existing) throw new ConflictException("A payment for this plan is already pending review");
+
+    const amountInr = computeFinalPriceInr(plan.priceInr, plan.discountType, plan.discountValue);
+    return this.prisma.payment.create({
       data: {
         userId,
         planId,
-        amountInr: plan.priceInr,
-        status: PaymentStatus.MOCK_SUCCESS,
-        providerRef: `mock_success_${Date.now()}`
+        amountInr,
+        status: PaymentStatus.PENDING_REVIEW,
+        screenshotUrl,
+        referenceNote
       }
     });
-    const purchase = await this.prisma.purchase.upsert({
-      where: { userId_planId: { userId, planId } },
-      update: {},
-      create: { userId, planId }
+  }
+
+  me(userId: string) {
+    return this.prisma.payment.findMany({
+      where: { userId },
+      include: { plan: true },
+      orderBy: { createdAt: "desc" }
     });
-    return { payment, purchase };
   }
 
   purchases(userId: string) {

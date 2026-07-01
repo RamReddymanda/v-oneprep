@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button, Card } from "@/components/ui";
 import { api } from "@/lib/api";
+import { useRequireAdmin } from "@/lib/use-require-admin";
 
 type User = {
   id: string;
@@ -17,6 +18,7 @@ type User = {
 };
 
 export default function AdminUsersPage() {
+  const ready = useRequireAdmin();
   const [users, setUsers] = useState<User[]>([]);
   const [query, setQuery] = useState("");
 
@@ -25,8 +27,10 @@ export default function AdminUsersPage() {
   }
 
   useEffect(() => {
-    void load();
-  }, []);
+    if (ready) void load();
+  }, [ready]);
+
+  if (!ready) return null;
 
   async function toggle(user: User) {
     await api(`/admin/users/${user.id}/active`, { method: "PATCH", json: { active: !user.active } });

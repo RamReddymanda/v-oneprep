@@ -1,13 +1,44 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from "@nestjs/common";
-import { PublishStatus, Role } from "@prisma/client";
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  ConflictException,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+  Req,
+  UploadedFile,
+  UseInterceptors
+} from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Request } from "express";
+import { DiscountType, PaymentStatus, Prisma, PublishStatus, Role } from "@prisma/client";
 import { Roles } from "../auth-context";
 import { ArticleDto, AssessmentDto, CourseDto, ModuleDto, PlanDto, QuestionDto, TaskDto } from "../dto";
 import { PrismaService } from "../services/prisma.service";
+import { UploadsService } from "../services/uploads.service";
+import { withFinalPrice } from "../utils/pricing";
+import { imageUploadOptions } from "../utils/upload-config";
+
+function assertValidDiscount(priceInr: number, discountType: DiscountType, discountValue: number) {
+  if (discountType === DiscountType.PERCENTAGE && (discountValue < 0 || discountValue > 100)) {
+    throw new BadRequestException("Percentage discount must be between 0 and 100");
+  }
+  if (discountType === DiscountType.FIXED && discountValue > priceInr) {
+    throw new BadRequestException("Fixed discount cannot exceed the plan price");
+  }
+}
 
 @Roles(Role.ADMIN)
 @Controller("admin")
 export class AdminController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly uploads: UploadsService
+  ) {}
 
   @Get("metrics")
   async metrics() {
@@ -16,7 +47,7 @@ export class AdminController {
       this.prisma.user.count({ where: { role: Role.STUDENT } }),
       this.prisma.course.count(),
       this.prisma.assessmentAttempt.count({ where: { submittedAt: { not: null } } }),
-      this.prisma.payment.findMany({ where: { status: "MOCK_SUCCESS" } }),
+      this.prisma.payment.findMany({ where: { status: PaymentStatus.APPROVED } }),
       this.prisma.user.findMany({ orderBy: { createdAt: "desc" }, take: 5 })
     ]);
     return {
@@ -56,13 +87,27 @@ export class AdminController {
   }
 
   @Post("courses")
-  createCourse(@Body() dto: CourseDto) {
-    return this.prisma.course.create({ data: dto });
+  async createCourse(@Body() dto: CourseDto) {
+    try {
+      return await this.prisma.course.create({ data: dto });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictException("Slug already exists");
+      }
+      throw error;
+    }
   }
 
   @Patch("courses/:id")
-  updateCourse(@Param("id") id: string, @Body() dto: Partial<CourseDto>) {
-    return this.prisma.course.update({ where: { id }, data: dto });
+  async updateCourse(@Param("id") id: string, @Body() dto: Partial<CourseDto>) {
+    try {
+      return await this.prisma.course.update({ where: { id }, data: dto });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictException("Slug already exists");
+      }
+      throw error;
+    }
   }
 
   @Delete("courses/:id")
@@ -96,13 +141,27 @@ export class AdminController {
   }
 
   @Post("tasks")
-  createTask(@Body() dto: TaskDto) {
-    return this.prisma.task.create({ data: dto });
+  async createTask(@Body() dto: TaskDto) {
+    try {
+      return await this.prisma.task.create({ data: dto });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictException("Slug already exists");
+      }
+      throw error;
+    }
   }
 
   @Patch("tasks/:id")
-  updateTask(@Param("id") id: string, @Body() dto: Partial<TaskDto>) {
-    return this.prisma.task.update({ where: { id }, data: dto });
+  async updateTask(@Param("id") id: string, @Body() dto: Partial<TaskDto>) {
+    try {
+      return await this.prisma.task.update({ where: { id }, data: dto });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new ConflictException("Slug already exists");
+      }
+      throw error;
+    }
   }
 
   @Delete("tasks/:id")
@@ -111,35 +170,50 @@ export class AdminController {
   }
 
   @Get("plans")
-  plans() {
-    return this.prisma.plan.findMany({ include: { courses: true }, orderBy: { createdAt: "desc" } });
+  async plans() {
+    const plans = await this.prisma.plan.findMany({ include: { courses: true }, orderBy: { createdAt: "desc" } });
+    return plans.map(withFinalPrice);
   }
 
   @Post("plans")
-  createPlan(@Body() dto: PlanDto) {
-    return this.prisma.plan.create({
+  async createPlan(@Body() dto: PlanDto) {
+    assertValidDiscount(dto.priceInr, dto.discountType, dto.discountValue);
+    const plan = await this.prisma.plan.create({
       data: {
         name: dto.name,
         priceInr: dto.priceInr,
         features: dto.features,
         status: dto.status,
+        discountType: dto.discountType,
+        discountValue: dto.discountValue,
         courses: { connect: dto.courseIds.map((id) => ({ id })) }
-      }
+      },
+      include: { courses: true }
     });
+    return withFinalPrice(plan);
   }
 
   @Patch("plans/:id")
-  updatePlan(@Param("id") id: string, @Body() dto: Partial<PlanDto>) {
-    return this.prisma.plan.update({
+  async updatePlan(@Param("id") id: string, @Body() dto: Partial<PlanDto>) {
+    const current = await this.prisma.plan.findUniqueOrThrow({ where: { id } });
+    const priceInr = dto.priceInr ?? current.priceInr;
+    const discountType = dto.discountType ?? current.discountType;
+    const discountValue = dto.discountValue ?? current.discountValue;
+    assertValidDiscount(priceInr, discountType, discountValue);
+    const plan = await this.prisma.plan.update({
       where: { id },
       data: {
         name: dto.name,
         priceInr: dto.priceInr,
         features: dto.features,
         status: dto.status,
+        discountType: dto.discountType,
+        discountValue: dto.discountValue,
         courses: dto.courseIds ? { set: dto.courseIds.map((courseId) => ({ id: courseId })) } : undefined
-      }
+      },
+      include: { courses: true }
     });
+    return withFinalPrice(plan);
   }
 
   @Delete("plans/:id")
@@ -150,6 +224,16 @@ export class AdminController {
   @Post("questions")
   createQuestion(@Body() dto: QuestionDto) {
     return this.prisma.question.create({ data: dto });
+  }
+
+  @Patch("questions/:id")
+  updateQuestion(@Param("id") id: string, @Body() dto: Partial<QuestionDto>) {
+    return this.prisma.question.update({ where: { id }, data: dto });
+  }
+
+  @Delete("questions/:id")
+  deleteQuestion(@Param("id") id: string) {
+    return this.prisma.question.delete({ where: { id } });
   }
 
   @Post("articles")
@@ -203,6 +287,66 @@ export class AdminController {
 
   @Patch("users/:id/active")
   setActive(@Param("id") id: string, @Body() dto: { active: boolean }) {
-    return this.prisma.user.update({ where: { id }, data: { active: dto.active } });
+    return this.prisma.user.update({
+      where: { id },
+      data: { active: dto.active },
+      select: { id: true, firstName: true, lastName: true, email: true, role: true, active: true, createdAt: true }
+    });
+  }
+
+  @Get("payments")
+  payments(@Query("status") status?: PaymentStatus) {
+    return this.prisma.payment.findMany({
+      where: { status: status ?? PaymentStatus.PENDING_REVIEW },
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, email: true } },
+        plan: true
+      },
+      orderBy: { createdAt: "desc" }
+    });
+  }
+
+  @Post("payments/:id/approve")
+  async approvePayment(@Param("id") id: string) {
+    const payment = await this.prisma.payment.findUniqueOrThrow({ where: { id } });
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.payment.update({
+        where: { id },
+        data: { status: PaymentStatus.APPROVED, reviewedAt: new Date() }
+      });
+      await tx.purchase.upsert({
+        where: { userId_planId: { userId: payment.userId, planId: payment.planId } },
+        update: {},
+        create: { userId: payment.userId, planId: payment.planId }
+      });
+      return updated;
+    });
+  }
+
+  @Post("payments/:id/reject")
+  rejectPayment(@Param("id") id: string, @Body() dto: { reviewNote?: string }) {
+    return this.prisma.payment.update({
+      where: { id },
+      data: { status: PaymentStatus.REJECTED, reviewedAt: new Date(), reviewNote: dto.reviewNote }
+    });
+  }
+
+  @Get("settings")
+  settings() {
+    return this.prisma.appSettings.findUnique({ where: { id: "singleton" } });
+  }
+
+  @Post("settings/qr-code")
+  @UseInterceptors(FileInterceptor("file", imageUploadOptions()))
+  async uploadQrCode(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) throw new BadRequestException("No file uploaded");
+    const origin = `${req.protocol}://${req.get("host")}`;
+    const qrCodeUrl = await this.uploads.storeFile(file, origin);
+    await this.prisma.appSettings.upsert({
+      where: { id: "singleton" },
+      update: { qrCodeUrl },
+      create: { id: "singleton", qrCodeUrl }
+    });
+    return { qrCodeUrl };
   }
 }

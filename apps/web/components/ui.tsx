@@ -67,3 +67,22 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
     </div>
   );
 }
+
+export function Breadcrumbs({ items }: { items: Array<{ label: string; href?: string }> }) {
+  return (
+    <nav className="flex flex-wrap items-center gap-1.5 text-sm text-muted">
+      {items.map((item, index) => (
+        <span key={`${item.label}-${index}`} className="flex items-center gap-1.5">
+          {index > 0 && <span className="text-line">/</span>}
+          {item.href ? (
+            <Link className="font-medium text-primary hover:underline" href={item.href}>
+              {item.label}
+            </Link>
+          ) : (
+            <span className="font-medium text-ink">{item.label}</span>
+          )}
+        </span>
+      ))}
+    </nav>
+  );
+}

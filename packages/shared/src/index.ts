@@ -15,8 +15,21 @@ export enum PublishStatus {
 }
 
 export enum PaymentStatus {
-  MOCK_SUCCESS = "MOCK_SUCCESS",
-  MOCK_FAILED = "MOCK_FAILED"
+  PENDING_REVIEW = "PENDING_REVIEW",
+  APPROVED = "APPROVED",
+  REJECTED = "REJECTED"
+}
+
+export enum DiscountType {
+  NONE = "NONE",
+  PERCENTAGE = "PERCENTAGE",
+  FIXED = "FIXED"
+}
+
+export enum QuestionDifficulty {
+  EASY = "EASY",
+  MEDIUM = "MEDIUM",
+  HARD = "HARD"
 }
 
 export enum QuestionType {
@@ -38,6 +51,9 @@ export type PlanSummary = {
   id: string;
   name: string;
   priceInr: number;
+  finalPriceInr: number;
+  discountType: DiscountType;
+  discountValue: number;
   features: string[];
   status: PublishStatus;
   courseIds: string[];

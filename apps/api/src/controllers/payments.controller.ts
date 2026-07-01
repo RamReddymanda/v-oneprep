@@ -1,20 +1,25 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { CurrentUser, RequestUser } from "../auth-context";
-import { CheckoutDto } from "../dto";
+import { SubmitPaymentDto } from "../dto";
 import { PaymentsService } from "../services/payments.service";
 
 @Controller()
 export class PaymentsController {
   constructor(private readonly payments: PaymentsService) {}
 
-  @Post("payments/mock-checkout")
-  checkout(@CurrentUser() user: RequestUser, @Body() dto: CheckoutDto) {
-    return this.payments.checkout(user.id, dto.planId);
+  @Get("payments/checkout/:planId")
+  checkoutInfo(@Param("planId") planId: string) {
+    return this.payments.checkoutInfo(planId);
   }
 
-  @Post("payments/mock-success")
-  success(@CurrentUser() user: RequestUser, @Body() dto: CheckoutDto) {
-    return this.payments.success(user.id, dto.planId);
+  @Post("payments/submit")
+  submit(@CurrentUser() user: RequestUser, @Body() dto: SubmitPaymentDto) {
+    return this.payments.submit(user.id, dto.planId, dto.screenshotUrl, dto.referenceNote);
+  }
+
+  @Get("payments/me")
+  me(@CurrentUser() user: RequestUser) {
+    return this.payments.me(user.id);
   }
 
   @Get("purchases/me")

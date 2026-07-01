@@ -1,15 +1,18 @@
-import { Body, Controller, Post } from "@nestjs/common";
-import { Role } from "@prisma/client";
-import { Roles } from "../auth-context";
+import { BadRequestException, Controller, Post, Req, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { FileInterceptor } from "@nestjs/platform-express";
+import type { Request } from "express";
 import { UploadsService } from "../services/uploads.service";
+import { imageUploadOptions } from "../utils/upload-config";
 
-@Roles(Role.ADMIN)
 @Controller("uploads")
 export class UploadsController {
   constructor(private readonly uploads: UploadsService) {}
 
-  @Post("prepare")
-  prepare(@Body() dto: { filename: string }) {
-    return this.uploads.createUploadPlaceholder(dto.filename);
+  @Post("screenshot")
+  @UseInterceptors(FileInterceptor("file", imageUploadOptions()))
+  async upload(@UploadedFile() file: Express.Multer.File, @Req() req: Request) {
+    if (!file) throw new BadRequestException("No file uploaded");
+    const origin = `${req.protocol}://${req.get("host")}`;
+    return { url: await this.uploads.storeFile(file, origin) };
   }
 }
