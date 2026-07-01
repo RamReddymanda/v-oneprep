@@ -332,8 +332,9 @@ export class AdminController {
   }
 
   @Get("settings")
-  settings() {
-    return this.prisma.appSettings.findUnique({ where: { id: "singleton" } });
+  async settings() {
+    const settings = await this.prisma.appSettings.findUnique({ where: { id: "singleton" } });
+    return settings ?? { id: "singleton", qrCodeUrl: null };
   }
 
   @Post("settings/qr-code")
